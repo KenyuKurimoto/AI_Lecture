@@ -45,15 +45,15 @@ class SAE(val n: Int, val m: Int){
   }
   // バッチループの初めでwDeltaとb1Deltaとb2Deltaの中身を全て0に初期化
   def initDeltaRhohat(){
-    for (i <- 0 to n){
+    for (i <- 0 to n-1){
       b2Delta(i) = 0.0
     }
-    for (j <- 0 to m){
+    for (j <- 0 to m-1){
       b1Delta(j) = 0.0
       rhohat(j) = 0.0
     }
-    for (j <- 0 to m){
-      for (i <- 0 to n){
+    for (j <- 0 to m-1){
+      for (i <- 0 to n-1){
         w1Delta(j)(i) = 0.0
         w2Delta(i)(j) = 0.0
       }
@@ -66,7 +66,7 @@ class SAE(val n: Int, val m: Int){
   // j=0~m-1までy(j)を求める
   // i=0~n-1についてw(j)(i)*x(i)の和を求めて、バイアスを足してシグモイド関数に代入
   def encode(x: Array[Double], y: Array[Double]){
-    for (j <- 0 to m){
+    for (j <- 0 to m-1){
       var wsum = sum(n){i => w1(j)(i)*x(i)}
       y(j) = sigmoid(wsum + b1(j))
     }
@@ -74,7 +74,7 @@ class SAE(val n: Int, val m: Int){
   // i=0~n-1までz(i)を求める
   // j=0~m-1についてw(j)(i)*y(j)の和を求めて、バイアスを足してシグモイド関数に代入
   def decode(y: Array[Double], z: Array[Double]){
-    for (i <- 0 to n){
+    for (i <- 0 to n-1){
       z(i) = sigmoid(sum(m){j => w2(i)(j)*y(j)} + b2(i))
     }
   }
@@ -118,20 +118,20 @@ class SAE(val n: Int, val m: Int){
   // dataが扱うデータ、patNは
   def train(data: Array[Array[Double]], patN: Int, trainN: Int, batchK: Int){
     // 訓練ループ開始
-    for (k <- 0 to trainN * patN/batchK){
+    for (k <- 0 to trainN * patN/batchK - 1){
       // 新たな訓練ループを始めるのでdeltaとrhohatを初期化
       initDeltaRhohat
       // 1周目のバッチループで先にrhohatを求めておく
-      for (l <- 0 to batchK){
+      for (l <- 0 to batchK-1){
         // データの読み込み
         val idx = k * batchK + l
         // 各j毎に(＜このバッチループにおける＞y(j))/batchKを足してやる
-        for (j <- 0 to m){
+        for (j <- 0 to m-1){
           rhohat(j) += (sum(n){i => w1(j)(i)*data(idx)(i)}+b1(j))/batchK//
         }
       }
       // 2周目のバッチループで修正量b1Delta、b2Delta、wDeltaを求める
-      for (l <- 0 to batchK){
+      for (l <- 0 to batchK-1){
         // 再度データの読み込み
         val idx = k * batchK + l
         // プロパゲーション実行、これによりxyzが定まる
@@ -140,13 +140,13 @@ class SAE(val n: Int, val m: Int){
         addDelta(data(idx), y, z, rhohat, batchK)
       }
       // 訓練ループの最後にb1、b2、wを更新する
-      for (j <- 0 to m){
+      for (j <- 0 to m-1){
         b1(j) += -alpha*b1Delta(j)
       }
-      for (i <- 0 to n){
+      for (i <- 0 to n-1){
         b2(i) += -alpha*b2Delta(i)
       }
-      for (j <- 0 to m){
+      for (j <- 0 to m-1){
         for (i <- 0 to n){
           w1(j)(i) += -alpha*(w1Delta(j)(i)/batchK + lambda*w1(j)(i))
           w2(i)(j) += -alpha*(w2Delta(i)(j)/batchK + lambda*w2(i)(j))
